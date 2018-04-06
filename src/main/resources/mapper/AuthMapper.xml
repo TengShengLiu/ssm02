@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--mapper标签的namespace属性代表命名空间，使用命名空间来区分不同的mapper文件，目前的mapper可以随便写
+    注意：以后以后使用mapper代理开发DAO时，namespace会起到关键作用
+-->
+<mapper namespace="com.hwua.ssm.dao.AuthMapper">
+
+    <!--select 递归查询 column用哪个属性查-->
+    <resultMap id="queryByIdResultMap" type="auth">
+        <id column="dbid" property="dbid"/>
+        <collection property="children" ofType="auth" select="queryById" column="dbid"/>
+    </resultMap>
+
+    <select id="queryById" parameterType="int" resultMap="queryByIdResultMap">
+        SELECT * FROM auth WHERE parentId = #{dbid}
+    </select>
+
+
+    <!--查询授权-->
+    <resultMap id="queryGrantResultMap" type="map">
+        <id column="id" property="id"/>
+        <result column="text" property="text"/>
+        <collection property="children" ofType="map" select="queryGrant" column="id"/>
+    </resultMap>
+
+    <select id="queryGrant" parameterType="int" resultMap="queryGrantResultMap">
+        SELECT dbid id,authName text FROM auth WHERE parentId = #{id} AND valid = 1
+    </select>
+
+
+
+    <update id="update" parameterType="auth">
+        UPDATE auth SET authName=#{authName},authCode=#{authCode},authURL=#{authURL},type=#{type},parentId=#{parentId},orders=#{orders},valid=#{valid},layer=#{layer} WHERE dbid=#{dbid}
+    </update>
+
+
+    <insert id="doInsert" parameterType="auth">
+        INSERT INTO auth(authName, authCode, authURL, type, parentId, orders, valid, layer) VALUES(#{authName},#{authCode},#{authURL},#{type},#{parentId},#{orders},#{valid},#{layer})
+    </insert>
+
+    <select id="queryValidAuth" parameterType="int" resultType="int">
+        SELECT auth.dbid FROM auth,role,role_auth WHERE auth.dbid = authId AND role.dbid = roleId AND roleId = #{roleId}
+    </select>
+
+</mapper>

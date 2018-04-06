@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--mapper标签的namespace属性代表命名空间，使用命名空间来区分不同的mapper文件，目前的mapper可以随便写
+    注意：以后以后使用mapper代理开发DAO时，namespace会起到关键作用
+-->
+<mapper namespace="com.hwua.ssm.dao.UserMapper">
+    <select id="queryUser" parameterType="map" resultType="user">
+        SELECT * FROM user WHERE 1 = 1
+        <if test="userName != null">
+            AND userName LIKE concat('%',#{userName},'%')
+        </if>
+        <if test="password != null">
+            AND password LIKE concat('%',#{password},'%')
+        </if>
+        <if test="realName != null">
+            AND realName = #{realName}
+        </if>
+        <if test="valid != null">
+            AND valid = #{valid}
+        </if>
+        ORDER BY dbid
+        <if test="start!=null &amp;&amp;rows!=null">
+            LIMIT #{start},#{rows}
+        </if>
+    </select>
+    
+    <select id="getCount" parameterType="map" resultType="int">
+        SELECT count(dbid) FROM user WHERE 1 = 1
+        <if test="userName != null">
+            AND userName LIKE concat('%',#{userName},'%')
+        </if>
+        <if test="password != null">
+            AND password LIKE concat('%',#{password},'%')
+        </if>
+        <if test="realName != null">
+            AND realName = #{realName}
+        </if>
+        <if test="valid != null">
+            AND valid = #{valid}
+        </if>
+    </select>
+
+    <insert id="addUser" parameterType="user">
+       INSERT INTO user(userName, password, realName, valid) VALUES (#{userName},#{password},#{realName},#{valid})
+    </insert>
+
+    <delete id="delRoles" parameterType="int">
+        DELETE FROM user_role WHERE userId = #{userId}
+    </delete>
+
+    <insert id="addRoles" parameterType="list">
+        INSERT INTO user_role (userId, roleId) VALUES
+        <foreach collection="list" item="row" separator=",">
+            (#{row.userId},#{row.roleId})
+        </foreach>
+    </insert>
+
+    <select id="login" parameterType="map" resultType="map">
+        SELECT * FROM user WHERE userName = #{userName} AND password = #{password}
+    </select>
+
+    <select id="queryAuthsByUserId" parameterType="int" resultType="auth">
+        SELECT *,dbid id,authName text FROM auth WHERE layer !=0 AND type = 1 AND dbid IN (
+            SELECT authId FROM role_auth WHERE roleId IN (
+                SELECT roleId FROM user_role WHERE userId = #{userId}
+            )
+        )
+    </select>
+
+    <select id="queryResouce" parameterType="int" resultType="int">
+        SELECT dbid FROM auth WHERE type = 2 AND dbid NOT IN (
+        SELECT authId FROM role_auth WHERE roleId IN (
+        SELECT roleId FROM user_role WHERE userId = #{userId}
+        )
+        )
+    </select>
+
+</mapper>
